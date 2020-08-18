@@ -1,6 +1,6 @@
 #include <pthread.h>
+#include <iostream>
 #include "Semaphore.h"
-
 
 /*************************************************************************************
  * Semaphore (constructor) - this should take count and place it into a local variable.
@@ -11,7 +11,10 @@
  *************************************************************************************/
 
 Semaphore::Semaphore(int count) {
-
+    val = count;
+    pthread_cond_t status;
+    pthread_mutex_t mutex;
+    pthread_mutex_init(&mutex,NULL);
 }
 
 
@@ -22,6 +25,8 @@ Semaphore::Semaphore(int count) {
  *************************************************************************************/
 
 Semaphore::~Semaphore() {
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&status);
 }
 
 
@@ -31,7 +36,10 @@ Semaphore::~Semaphore() {
  *************************************************************************************/
 
 void Semaphore::wait() {
-
+    val--;
+    if(val < 0){
+        pthread_cond_wait(&status,&mutex);
+    }
 }
 
 
@@ -41,7 +49,18 @@ void Semaphore::wait() {
  *************************************************************************************/
 
 void Semaphore::signal() {
-
+    val++;
+    if(val>=0){
+        pthread_cond_signal(&status);
+    }
 }
 
-
+// For testing only
+using namespace std;
+int main(){
+    Semaphore mando(10);
+    cout << mando.val;
+    //pthread_mutex_lock(&mutex);
+    //pthread_mutex_unlock(&mutex);
+    return 0;
+}

@@ -1,7 +1,9 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-class Semaphore 
+#include <pthread.h>
+
+class Semaphore
 {
 public:
 
@@ -10,9 +12,11 @@ public:
 
 	void wait();
 	void signal();
+	int val;
 
 private:
-
+	pthread_cond_t status;
+    pthread_mutex_t mutex;
 };
 
 #endif
