@@ -1,6 +1,5 @@
 /*************************************************************************************
- * babyyoda - used to test your semaphore implementation and can be a starting point for
- *			     your store front implementation
+ * babyyoda - store front implementation for baby Yoda doll business
  *
  *************************************************************************************/
 
@@ -12,21 +11,24 @@
 #include "Semaphore.h"
 #include <vector>
 
-// Semaphores that each thread will have access to as they are global in shared memory
+// Shared semaphores
 Semaphore *empty = NULL;
 Semaphore *full = NULL;
 
+// Mutex to protect the buffer
 pthread_mutex_t buf_mutex;
 
+// The buffer - chose a vector for simplicity of expansion
 std::vector<int> buffer;
+
+// Tracks number of dolls purchased
 int consumed = 0;
 
 
 /*************************************************************************************
  * producer_routine - this function is called when the producer thread is created.
  *
- *			Params: data - a void pointer that should point to an integer that indicates
- *							   the total number to be produced
+ *			Params: data - pointer to an integer indicating number of dolls to produce
  *
  *			Returns: always NULL
  *
@@ -75,19 +77,16 @@ void *producer_routine(void *data) {
 /*************************************************************************************
  * consumer_routine - this function is called when the consumer thread is created.
  *
- *       Params: data - a void pointer that should point to a boolean that indicates
- *                      the thread should exit. Doesn't work so don't worry about it
+ *       Params: none
  *
  *       Returns: always NULL
  *
  *************************************************************************************/
 
-void *consumer_routine(void *data) {
-	(void) data;
-
-	bool quitthreads = false;
-
-	while (!quitthreads) {
+void *consumer_routine(void*) {
+	// Consumer will continue to buy baby Yoda dolls until they are out of stock
+	// ...probably reselling on eBay...
+	while (true) {
 		printf("Consumer wants to buy a Yoda...\n");
 
 		// Semaphore to see if there are any items to take
@@ -114,10 +113,12 @@ void *consumer_routine(void *data) {
 
 
 /*************************************************************************************
- * main - Standard C main function for our storefront.
+ * main - Standard C main function for the storefront.
  *
- *		Expected params: pctest <num_consumers> <max_items>
- *				max_items - how many items will be produced before the shopkeeper closes
+ *		Expected params: babyyoda <buffer_size> <num_consumers> <max_items>
+ *				buffer_size - howw many baby Yoda dolls will fit on the shelves
+ *				num_consumers - number of customers who want a baby Yoda at any given time
+ *				max_items - how many items will be produced before the shop closes
  *
  *************************************************************************************/
 
@@ -167,13 +168,14 @@ int main(int argv, const char *argc[]) {
 	while (consumed < num_produce)
 		sleep(1);
 
-	// Now make sure they all exited
+	// Kick remaining customers out of the store
 	for (int i=0; i<num_consumers; i++) {
 		pthread_cancel(consumer[i]);
-		printf("Out of stock! Sending customer home...\n");
 	}
 
-	// We are exiting, clean up
+	printf("Out of stock! Closing up shop...\n");
+
+	// Clean up
 	delete empty;
 	delete full;
 
