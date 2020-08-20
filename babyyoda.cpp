@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "Semaphore.h"
+#include <vector>
 
 // Semaphores that each thread will have access to as they are global in shared memory
 Semaphore *empty = NULL;
@@ -17,7 +18,7 @@ Semaphore *full = NULL;
 
 pthread_mutex_t buf_mutex;
 
-int buffer = 0;
+std::vector<int> buffer;
 int consumed = 0;
 
 
@@ -38,9 +39,10 @@ void *producer_routine(void *data) {
 
 	// The current serial number (incremented)
 	unsigned int serialnum = 1;
-	
+
 	// We know the data pointer is an integer that indicates the number to produce
 	int left_to_produce = *((int *) data);
+
 
 	// Loop through the amount we're going to produce and place into the buffer
 	while (left_to_produce > 0) {
@@ -52,20 +54,19 @@ void *producer_routine(void *data) {
 		// Place item on the next shelf slot by first setting the mutex to protect our buffer vars
 		pthread_mutex_lock(&buf_mutex);
 
-		buffer = serialnum;
+		buffer.push_back(serialnum);
 		serialnum++;
 		left_to_produce--;
 
-		pthread_mutex_unlock(&buf_mutex);
-		
 		printf("   Yoda put on shelf.\n");
-		
+		pthread_mutex_unlock(&buf_mutex);
+
 		// Semaphore signal that there are items available
 		empty->signal();
 
 		// random sleep but he makes them fast so 1/20 of a second
 		usleep((useconds_t) (rand() % 200000));
-	
+
 	}
 	return NULL;
 }
@@ -94,11 +95,11 @@ void *consumer_routine(void *data) {
 
 		// Take an item off the shelf
 		pthread_mutex_lock(&buf_mutex);
-	
-		printf("   Consumer bought Yoda #%d.\n", buffer);
-		buffer = 0;
+
+		printf("   Consumer bought Yoda #%d.\n", buffer.back());
+		buffer.pop_back();
 		consumed++;
-	
+
 		pthread_mutex_unlock(&buf_mutex);
 
 		// Consumers wait up to one second
@@ -108,12 +109,12 @@ void *consumer_routine(void *data) {
 	}
 	printf("Consumer goes home.\n");
 
-	return NULL;	
+	return NULL;
 }
 
 
 /*************************************************************************************
- * main - Standard C main function for our storefront. 
+ * main - Standard C main function for our storefront.
  *
  *		Expected params: pctest <num_consumers> <max_items>
  *				max_items - how many items will be produced before the shopkeeper closes
@@ -123,31 +124,37 @@ void *consumer_routine(void *data) {
 int main(int argv, const char *argc[]) {
 
 	// Get our argument parameters
-	if (argv < 2) {
-		printf("Invalid parameters. Format: %s <max_items>\n", argc[0]);
+	if (argv < 4) {
+		printf("Invalid parameters. Format: %s <buffer_size> <num_consumers> <max_items>\n", argc[0]);
 		exit(0);
 	}
 
 	// User input on the size of the buffer
-	int num_produce = (unsigned int) strtol(argc[1], NULL, 10);
+	int buffer_size = (unsigned int) strtol(argc[1], NULL, 10);
+
+	int num_consumers = (unsigned int) strtol(argc[2],NULL,10);
+
+	int num_produce = (unsigned int) strtol(argc[3], NULL, 10);
 
 
 	printf("Producing %d today.\n", num_produce);
-	
+
 	// Initialize our semaphores
 	empty = new Semaphore(0);
-	full = new Semaphore(1);
+	full = new Semaphore(buffer_size-1);
 
 	pthread_mutex_init(&buf_mutex, NULL); // Initialize our buffer mutex
 
 	pthread_t producer;
-	pthread_t consumer;
+	pthread_t consumer[num_consumers];
 
 	// Launch our producer thread
 	pthread_create(&producer, NULL, producer_routine, (void *) &num_produce);
 
 	// Launch our consumer thread
-	pthread_create(&consumer, NULL, consumer_routine, NULL);
+	for(int i = 0; i < num_consumers; i++){
+		pthread_create(&consumer[i], NULL, consumer_routine, NULL);
+	}
 
 	// Wait for our producer thread to finish up
 	pthread_join(producer, NULL);
@@ -161,14 +168,14 @@ int main(int argv, const char *argc[]) {
 		sleep(1);
 
 	// Now make sure they all exited
-//	for (unsigned int i=0; i<NUM_CONSUMERS; i++) {
-//		pthread_join(consumers[i], NULL);
-//	}
+	for (int i=0; i<num_consumers; i++) {
+		pthread_cancel(consumer[i]);
+		printf("Out of stock! Sending customer home...\n");
+	}
 
 	// We are exiting, clean up
 	delete empty;
-	delete full;		
+	delete full;
 
 	printf("Producer/Consumer simulation complete!\n");
-
 }

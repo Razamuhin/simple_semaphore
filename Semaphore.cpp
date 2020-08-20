@@ -12,9 +12,8 @@
 
 Semaphore::Semaphore(int count) {
     val = count;
-    pthread_cond_t status;
-    pthread_mutex_t mutex;
     pthread_mutex_init(&mutex,NULL);
+    pthread_cond_init(&status,NULL);
 }
 
 
@@ -50,17 +49,16 @@ void Semaphore::wait() {
 
 void Semaphore::signal() {
     val++;
-    if(val>=0){
-        pthread_cond_signal(&status);
-    }
+    pthread_cond_signal(&status);
 }
 
 // For testing only
-using namespace std;
+/*using namespace std;
 int main(){
     Semaphore mando(10);
     cout << mando.val;
+    cout << "\n";
     //pthread_mutex_lock(&mutex);
     //pthread_mutex_unlock(&mutex);
     return 0;
-}
+}*/
