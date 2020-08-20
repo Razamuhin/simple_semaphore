@@ -106,8 +106,6 @@ void *consumer_routine(void*) {
 
 		full->signal();
 	}
-	printf("Consumer goes home.\n");
-
 	return NULL;
 }
 
@@ -142,10 +140,13 @@ int main(int argv, const char *argc[]) {
 
 	// Initialize our semaphores
 	empty = new Semaphore(0);
-	full = new Semaphore(buffer_size-1);
+	full = new Semaphore(buffer_size);
 
-	pthread_mutex_init(&buf_mutex, NULL); // Initialize our buffer mutex
+	// Initialize buffer to the required size; initialize buffer mutex
+	buffer.reserve(buffer_size);
+	pthread_mutex_init(&buf_mutex, NULL);
 
+	// Initialize producer and consumer threads
 	pthread_t producer;
 	pthread_t consumer[num_consumers];
 

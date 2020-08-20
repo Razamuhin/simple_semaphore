@@ -13,7 +13,6 @@
 Semaphore::Semaphore(int count) {
     val = count;
     pthread_mutex_init(&mutex,NULL);
-    pthread_mutex_init(&val_mutex,NULL);
     pthread_cond_init(&status,NULL);
 }
 
@@ -26,7 +25,6 @@ Semaphore::Semaphore(int count) {
 
 Semaphore::~Semaphore() {
     pthread_mutex_destroy(&mutex);
-    pthread_mutex_destroy(&val_mutex);
     pthread_cond_destroy(&status);
 }
 
@@ -37,12 +35,12 @@ Semaphore::~Semaphore() {
  *************************************************************************************/
 
 void Semaphore::wait() {
-    pthread_mutex_lock(&val_mutex);
+    pthread_mutex_lock(&mutex);
     val--;
-    pthread_mutex_unlock(&val_mutex);
     if(val < 0){
         pthread_cond_wait(&status,&mutex);
     }
+    pthread_mutex_unlock(&mutex);
 }
 
 
@@ -52,10 +50,10 @@ void Semaphore::wait() {
  *************************************************************************************/
 
 void Semaphore::signal() {
-    pthread_mutex_lock(&val_mutex);
+    pthread_mutex_lock(&mutex);
     val++;
-    pthread_mutex_unlock(&val_mutex);
     pthread_cond_signal(&status);
+    pthread_mutex_unlock(&mutex);
 }
 
 // For testing only
