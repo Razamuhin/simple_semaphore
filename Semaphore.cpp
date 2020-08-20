@@ -53,11 +53,10 @@ void Semaphore::signal() {
 }
 
 // For testing only
-/*using namespace std;
-int main(){
+/*int main(){
     Semaphore mando(10);
-    cout << mando.val;
-    cout << "\n";
+    std::cout << mando.val;
+    std::cout << "\n";
     //pthread_mutex_lock(&mutex);
     //pthread_mutex_unlock(&mutex);
     return 0;
