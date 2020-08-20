@@ -17,6 +17,7 @@ public:
 private:
 	pthread_cond_t status;
     pthread_mutex_t mutex;
+	pthread_mutex_t val_mutex;
 };
 
 #endif
